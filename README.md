@@ -23,7 +23,10 @@ $ bench install-app EFT
 
 ## Initial configuration
 
-
+1. Create a **Electronic Funds Transfer Bank Detail**
+- It is basicly all the information provided by your bank to make it work
+2. Create a **Electronic Funds Transfer Supplier Information**
+- It is containing all the bank information of your supplier
 
 #### License
 
