@@ -23,11 +23,25 @@ $ bench install-app EFT
 
 ## Initial configuration
 
-1. Create a **Electronic Funds Transfer Bank Detail**
-	* It is basicly all the information provided by your bank to make it work
-2. Create a **Electronic Funds Transfer Supplier Information**
-	* It is containing all the bank information of your supplier
+1. Create a **Electronic Funds Transfer Bank Detail**.
+	* It is basicly all the information provided by your bank to make it work.
+2. Create a **Electronic Funds Transfer Supplier Information**.
+	* It is containing all the bank information of your supplier.
 
-#### License
+## How to use it
+
+1. Create a **Electronic Funds Transfer Supplier Information**.
+	* You'll need to provide the **Electronic Funds Transfer Bank Detail** you will be using.
+	* The only protocol working right now is the **80 bytes**.
+	* Each item is the purchase invoice that need to be paid.
+2. Save and Submit the document.
+	* This will reserve a sequence number for the bank.
+	* It will also save the posting date.
+3. Click on **Generate text file**
+	* It will create a attachment file that can be send to the bank.
+4. Click on **Make payment entry**
+
+
+## License
 
 GNU V3
