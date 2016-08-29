@@ -1,0 +1,74 @@
+{
+ "allow_copy": 0, 
+ "allow_import": 1, 
+ "allow_rename": 1, 
+ "autoname": "", 
+ "beta": 0, 
+ "creation": "2016-08-25 15:56:47.268521", 
+ "custom": 0, 
+ "docstatus": 0, 
+ "doctype": "DocType", 
+ "document_type": "Document", 
+ "editable_grid": 1, 
+ "fields": [
+  {
+   "fieldname": "supplier", 
+   "fieldtype": "Link", 
+   "label": "Supplier", 
+   "options": "Supplier"
+  }, 
+  {
+   "fieldname": "institution_number", 
+   "fieldtype": "Data", 
+   "label": "Institution number"
+  }, 
+  {
+   "fieldname": "branch_number", 
+   "fieldtype": "Data", 
+   "label": "Transit/Branch number"
+  }, 
+  {
+   "fieldname": "account_number", 
+   "fieldtype": "Data", 
+   "label": "Account number"
+  }
+ ], 
+ "hide_heading": 0, 
+ "hide_toolbar": 0, 
+ "idx": 0, 
+ "image_view": 0, 
+ "in_create": 0, 
+ "in_dialog": 0, 
+ "is_submittable": 0, 
+ "issingle": 0, 
+ "istable": 0, 
+ "max_attachments": 0, 
+ "modified": "2016-08-25 16:00:02.795734", 
+ "modified_by": "cfortin@aptitudetech.net", 
+ "module": "Electronic Funds Transfer", 
+ "name": "Electronic Funds Transfer Supplier Information", 
+ "name_case": "Title Case", 
+ "owner": "cfortin@aptitudetech.net", 
+ "permissions": [
+  {
+   "create": 1, 
+   "delete": 1, 
+   "email": 1, 
+   "export": 1, 
+   "import": 1, 
+   "print": 1, 
+   "read": 1, 
+   "report": 1, 
+   "role": "Bank Transfer Protocol", 
+   "share": 1, 
+   "write": 1
+  }
+ ], 
+ "quick_entry": 1, 
+ "read_only": 0, 
+ "read_only_onload": 0, 
+ "sort_field": "modified", 
+ "sort_order": "DESC", 
+ "title_field": "supplier", 
+ "track_seen": 0
+}

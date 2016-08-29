@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include electronic_funds_transfer *.css
+recursive-include electronic_funds_transfer *.csv
+recursive-include electronic_funds_transfer *.html
+recursive-include electronic_funds_transfer *.ico
+recursive-include electronic_funds_transfer *.js
+recursive-include electronic_funds_transfer *.json
+recursive-include electronic_funds_transfer *.md
+recursive-include electronic_funds_transfer *.png
+recursive-include electronic_funds_transfer *.py
+recursive-include electronic_funds_transfer *.svg
+recursive-include electronic_funds_transfer *.txt
+recursive-exclude electronic_funds_transfer *.pyc
