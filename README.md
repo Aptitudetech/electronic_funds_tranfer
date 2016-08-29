@@ -40,7 +40,7 @@ $ bench install-app EFT
 3. Click on **Generate text file**
 	* It will create a attachment file that can be send to the bank.
 4. Click on **Make payment entry**
-
+	* It will generate **payment entry** in the save state ready to be submit.
 
 ## License
 
