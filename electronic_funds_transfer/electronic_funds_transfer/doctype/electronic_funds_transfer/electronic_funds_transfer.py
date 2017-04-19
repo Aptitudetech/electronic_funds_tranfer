@@ -26,7 +26,9 @@ class ElectronicFundsTransfer(Document):
 
         def total_amount(self):
                 total = 0.0
-                for d in self.get('items'):
+                for d in self.get('items_eft'):
+                        total += d.grand_total
+		for d in self.get('items_cheque'):
                         total += d.grand_total
                 self.total_transfer = total
 
@@ -51,16 +53,20 @@ class ElectronicFundsTransfer(Document):
 
                 count = 0
                 total = 0.00
-                for d in self.get('items'):
+                #for d in self.get('items'):
+		for supplier, dict_invoice in self.create_dict_from_list(self.get('items_eft')).items():
+			grand_total = 0.00
+			for invoice_name, grand_total_invoice in dict_invoice.items():
+				grand_total = grand_total + grand_total_invoice
                         str_save_file += "\nC"
-                        str_save_file += "{:.2f}".format(d.grand_total).replace('.','').replace(',','').zfill(10)
-                        str_save_file += frappe.db.get_value("Electronic Funds Transfer Supplier Information", {'supplier':d.supplier_name}, "institution_number").zfill(3)
-                        str_save_file += frappe.db.get_value("Electronic Funds Transfer Supplier Information", {'supplier':d.supplier_name}, "branch_number").zfill(5)
-                        str_save_file += frappe.db.get_value("Electronic Funds Transfer Supplier Information", {'supplier':d.supplier_name}, "account_number").ljust(12)
-                        str_save_file += d.supplier_name.ljust(29)
-                        str_save_file += d.supplier_name.ljust(19)
+                        str_save_file += "{:.2f}".format(grand_total).replace('.','').replace(',','').zfill(10)
+                        str_save_file += frappe.db.get_value("Electronic Funds Transfer Supplier Information", {'supplier':supplier}, "institution_number").zfill(3)
+                        str_save_file += frappe.db.get_value("Electronic Funds Transfer Supplier Information", {'supplier':supplier}, "branch_number").zfill(5)
+                        str_save_file += frappe.db.get_value("Electronic Funds Transfer Supplier Information", {'supplier':supplier}, "account_number").ljust(12)
+                        str_save_file += supplier.ljust(29)
+                        str_save_file += supplier.ljust(19)
                         count += 1
-                        total += d.grand_total
+                        total += grand_total
 
                 str_save_file += "\nYC" + str(count).zfill(8) + str(total).replace('.','').replace(',','').zfill(14)
                 var_zero = 0
@@ -68,45 +74,95 @@ class ElectronicFundsTransfer(Document):
 
                 save_file("file-bank-transfer.txt", str_save_file, self.doctype, self.name, is_private=True)
 
+	def import_overdue_purchase_invoice(self):
+		for pi in frappe.get_list("Purchase Invoice", fields=["name"], filters={"status": "Overdue"}):
+			pi = frappe.get_doc("Purchase Invoice", pi.name)
+			#if pi.name in self.get('items_eft'):
+			#if pi.name in self.get('items_cheque'):
+			b = False
+			if frappe.db.exists("Electronic Funds Transfer Supplier Information", pi.supplier):	
+				for i in self.get('items_eft'):
+					if i.purchase_invoice == pi.name:
+						b = True
+				if b == False :
+					self.append("items_eft",
+                               		{
+                                		"purchase_invoice": pi.name,
+                                        	"supplier": pi.supplier,
+                                        	"grand_total": pi.grand_total
+                                	})
+			else:
+				for i in self.get('items_cheque'):
+                                        if i.purchase_invoice == pi.name:
+                                                b = True
+				if b == False :
+					self.append("items_cheque",
+                                	{
+                                		"purchase_invoice": pi.name,
+                                	        "supplier": pi.supplier,
+                                	        "grand_total": pi.grand_total
+                                	})
+		self.total_amount()
+	def create_dict_from_list(self, list1):
+		dict1  = {
+                "supplier" : {"invoice_no" : 100.01}
+                }
+		dict1.clear()
+		for d in list1:
+			if d.supplier in dict1 :
+				dict1[d.supplier][d.purchase_invoice] = d.grand_total
+			else:
+				dict1[d.supplier] = {}
+				dict1[d.supplier][d.purchase_invoice] = d.grand_total
+			frappe.msgprint(d.purchase_invoice)
+		return dict1
+	
 	def create_journal_entry(self):
-                for d in self.get('items'):
+		self.create_payment_entry_list(self.get('items_eft'), "Bank Transfer")
+		self.create_payment_entry_list(self.get("items_cheque"), "Cheque")
+
+	def create_payment_entry_list(self, list1, mode_of_payment):
+                for supplier, dict_invoice in self.create_dict_from_list(list1).items():
                         pme = frappe.new_doc("Payment Entry")
                         paid_from_account_name = frappe.db.get_value("Electronic Funds Transfer Bank Detail", self.bank_account, "account")
                         company_name = frappe.db.get_value("Account", paid_from_account_name, "company")
                         posting_date_today = datetime.date.today()
-                        party_details = get_party_details(company_name, "Supplier", d.supplier_name, posting_date_today)
+                        party_details = get_party_details(company_name, "Supplier", supplier, posting_date_today)
                         paid_from_account_detail = get_account_details(paid_from_account_name, posting_date_today)
                         paid_to_account_detail = get_account_details(party_details["party_account"], posting_date_today)
-                        reference_detail = get_reference_details("Purchase Invoice", d.purchase_invoice, party_details["party_account_currency"])
                         json_update = {
                                 "naming_series": "PE-",
                                 "payment_type": "Pay",
                                 "party_type": "Supplier",
-                                "party": d.supplier_name,
+                                "party": supplier,
                                 "posting_date": datetime.date.today(),
                                 "company" : company_name,
-                                "mode_of_payment": "Bank Transfer",
+                                "mode_of_payment": mode_of_payment,
                                 "paid_from": paid_from_account_name,
-                                "paid_amount":d.grand_total,
                                 "paid_from_account_currency": party_details["party_account_currency"],
                                 "party_balance": party_details["party_balance"],
                                 "paid_to" : party_details["party_account"],
                                 "paid_to_account_currency": paid_to_account_detail["account_currency"],
                                 "paid_to_account_balance" : paid_to_account_detail["account_balance"],
-                                "received_amount" : d.grand_total,
                                 "reference_no" : self.file_creation_number,
                                 "reference_date" : posting_date_today,
-                                "references" : [{
+                        }
+                        pme.update (json_update)
+			received_amount = 0.00
+                        #frappe.msgprint(str(json_update))
+			for invoice_name, grand_total in dict_invoice.items():
+				received_amount = received_amount + grand_total
+				reference_detail = get_reference_details("Purchase Invoice", invoice_name, party_details["party_account_currency"])
+				pme.append("references", {
                                         "reference_doctype": "Purchase Invoice",
-                                        "reference_name": d.purchase_invoice,
+                                        "reference_name": invoice_name,
                                         "due_date": reference_detail["due_date"],
                                         "total_amount": reference_detail["total_amount"],
                                         "outstanding_amount": reference_detail["outstanding_amount"],
-                                        "allocated_amount": d.grand_total,
+                                        "allocated_amount": grand_total,
                                         "exchange_rate": reference_detail["exchange_rate"]
-                                }]
-                        }
-                        pme.update (json_update)
-                        #frappe.msgprint(str(json_update))
+                                })
+			pme.received_amount = received_amount
+			pme.paid_amount = received_amount
                         pme.save()
                         #pme.submit()

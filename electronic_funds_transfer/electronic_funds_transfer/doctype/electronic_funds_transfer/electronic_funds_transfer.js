@@ -36,12 +36,31 @@ frappe.ui.form.on("Electronic Funds Transfer", "refresh", function(frm) {
                         'args': {},
 
                         callback: function() {
-                                frappe.set_route("List", "Payment Entry");
+                                //frappe.set_route("List", "Payment Entry");
                         }
                 });
             });
         }
     });
+
+
+frappe.ui.form.on("Electronic Funds Transfer", "refresh", function(frm) {
+    if(frm.doc.docstatus == 0){
+        frm.add_custom_button(__("Import Overdue Purchase Invoice"), function() {
+            // When this button is clicked, do this
+                frm.call({
+                        'method': 'import_overdue_purchase_invoice',
+                        'doc': frm.doc,
+                        'args': {},
+
+                        callback: function() {
+                                frm.refresh()
+                        }
+                });
+            });
+        }
+    });
+
 
 
 frappe.ui.form.on("Electronic Funds Transfer Item", "purchase_invoice",
