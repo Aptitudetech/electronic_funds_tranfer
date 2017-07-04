@@ -1,13 +1,13 @@
-// Copyright (c) 2016, CloudGround / Aptitudetech and contributors
+// Copyright (c) 2017, CloudGround / Aptitudetech and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Electronic Funds Transfer', {
+frappe.ui.form.on('Advance Automatic Payment Tool', {
 	refresh: function(frm) {
 
 	}
 });
 
-frappe.ui.form.on("Electronic Funds Transfer", "refresh", function(frm) {
+frappe.ui.form.on("Advance Automatic Payment Tool", "refresh", function(frm) {
     if(frm.doc.docstatus == 1){
         frm.add_custom_button(__("Generate Transfer Bank File"), function() {
             // When this button is clicked, do this
@@ -26,7 +26,7 @@ frappe.ui.form.on("Electronic Funds Transfer", "refresh", function(frm) {
 
 
 
-frappe.ui.form.on("Electronic Funds Transfer", "refresh", function(frm) {
+frappe.ui.form.on("Advance Automatic Payment Tool", "refresh", function(frm) {
     if(frm.doc.docstatus == 1 && frm.doc.is_payment_entry_generated == false){
         frm.add_custom_button(__("Make Payment Entry"), function() {
             // When this button is clicked, do this
@@ -43,7 +43,7 @@ frappe.ui.form.on("Electronic Funds Transfer", "refresh", function(frm) {
         }
     });
 
-frappe.ui.form.on("Electronic Funds Transfer", "refresh", function(frm) {
+frappe.ui.form.on("Advance Automatic Payment Tool", "refresh", function(frm) {
     if(frm.doc.docstatus == 1){
         frm.add_custom_button(__("Send Email Notification"), function() {
             // When this button is clicked, do this
@@ -61,7 +61,7 @@ frappe.ui.form.on("Electronic Funds Transfer", "refresh", function(frm) {
     });
 
 
-frappe.ui.form.on("Electronic Funds Transfer", "refresh", function(frm) {
+frappe.ui.form.on("Advance Automatic Payment Tool", "refresh", function(frm) {
     if(frm.doc.docstatus == 0){
         frm.add_custom_button(__("Import Overdue Purchase Invoice"), function() {
             // When this button is clicked, do this
@@ -80,7 +80,7 @@ frappe.ui.form.on("Electronic Funds Transfer", "refresh", function(frm) {
 
 
 
-frappe.ui.form.on("Electronic Funds Transfer Item", "purchase_invoice",
+frappe.ui.form.on("Advance Automatic Payment Tool", "purchase_invoice",
     function(frm, cdt, cdn) {
         frappe.call({
             "method": "frappe.client.get_value",
@@ -97,7 +97,7 @@ frappe.ui.form.on("Electronic Funds Transfer Item", "purchase_invoice",
         })
     });
 
-frappe.ui.form.on("Electronic Funds Transfer Item", "grand_total", function(frm, cdt, cdn){
+frappe.ui.form.on("Advance Automatic Payment Tool Item", "grand_total", function(frm, cdt, cdn){
     frm.call({
         'method': 'total_amount',
         'doc': frm.doc,

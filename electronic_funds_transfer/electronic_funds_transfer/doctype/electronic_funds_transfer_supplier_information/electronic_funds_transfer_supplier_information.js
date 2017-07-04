@@ -5,4 +5,6 @@ frappe.ui.form.on('Electronic Funds Transfer Supplier Information', {
 	refresh: function(frm) {
 
 	}
+	
 });
+
