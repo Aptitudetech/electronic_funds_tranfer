@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import frappe
 import datetime
 import unicodedata
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils.file_manager import save_file
 from frappe import utils
@@ -83,17 +84,30 @@ class AdvanceAutomaticPaymentTool(Document):
 		frappe.db.set(self, 'is_file_generated', True)
 
 	def import_overdue_purchase_invoice(self):
+		self.items_eft = []
+		self.items_cheque = []
+		currency = "CAD"
 		if self.sort_by == "Supplier Name":
 			order = "supplier"
 		elif self.sort_by == "Due Date (oldest first)":
 			order = "due_date"
 		if self.supplier_filter:
-			lst_pi = frappe.get_list("Purchase Invoice", fields=["name"], filters={"due_date": ("<=", self.posting_date), "outstanding_amount": (">", 0), "status": ("!=", "Paid"), "docstatus": 1, "supplier": self.supplier_filter})
+			lst_pi = frappe.get_list("Purchase Invoice", fields=["name"], filters={"due_date": ("<=", self.posting_date), "outstanding_amount": ("!=", 0), "status": ("!=", "Paid"), "docstatus": 1, "supplier": self.supplier_filter, "currency": currency})
 		else:
-			lst_pi = frappe.get_list("Purchase Invoice", fields=["name"], filters={"due_date": ("<=", self.posting_date), "outstanding_amount": (">", 0), "status": ("!=", "Paid"), "docstatus": 1}, order_by=order)
+			lst_pi = frappe.get_list("Purchase Invoice", fields=["name"], filters={"due_date": ("<=", self.posting_date), "outstanding_amount": ("!=", 0), "status": ("!=", "Paid"), "docstatus": 1, "currency": currency}, order_by=order)
 		
 		for pi in lst_pi:
-			pi = frappe.get_doc("Purchase Invoice", pi.name)
+			credit = 0
+			lst_cr = frappe.get_list("Purchase Invoice", fields=["name", "grand_total"], filters={"return_against": ("=", pi.name), "status": ("!=", "Paid"), "docstatus": 1})
+			for cr in lst_cr:
+				credit = cr.grand_total
+#				if credit != 0:
+#					frappe.msgprint(str(credit))
+                        pi = frappe.get_doc("Purchase Invoice", pi.name)
+			if pi.bill_date:
+				aging = frappe.utils.date_diff(self.posting_date, pi.bill_date)
+			else:
+				aging = frappe.utils.date_diff(self.posting_date, pi.posting_date)
 			b = False
 			if frappe.db.exists("Electronic Funds Transfer Supplier Information", pi.supplier):	
 				for i in self.get('items_eft'):
@@ -105,7 +119,9 @@ class AdvanceAutomaticPaymentTool(Document):
 						"purchase_invoice": pi.name,
 						"supplier": pi.supplier,
 						"grand_total": pi.outstanding_amount,
-						"bill_no": pi.bill_no
+						"bill_no": pi.bill_no,
+						"credit": credit,
+						"aging": aging 
 					})
 			else:
 				for i in self.get('items_cheque'):
@@ -117,7 +133,9 @@ class AdvanceAutomaticPaymentTool(Document):
 						"purchase_invoice": pi.name,
 						"supplier": pi.supplier,
 						"grand_total": pi.outstanding_amount,
-						"bill_no": pi.bill_no
+						"bill_no": pi.bill_no,
+						"credit": credit,
+						"aging": aging
 					})
 		self.total_amount()
 		#self.save()
@@ -137,6 +155,7 @@ class AdvanceAutomaticPaymentTool(Document):
 	def create_journal_entry(self):
 		self.create_payment_entry_list(self.get('items_eft'), "Bank Transfer - CDN")
 		self.create_payment_entry_list(self.get("items_cheque"), "Cheque CDN")
+		frappe.msgprint("Payment Entry are created.")
 
 	def create_payment_entry_list(self, list1, mode_of_payment):
 		for supplier, dict_invoice in self.create_dict_from_list(list1).items():
@@ -177,9 +196,16 @@ class AdvanceAutomaticPaymentTool(Document):
 			received_amount = 0.00
 			#frappe.msgprint(str(json_update))
 			for invoice_name, grand_total in dict_invoice.items():
+				#frappe.msgprint(str(invoice_name))
 				if grand_total > 0:
 					received_amount = received_amount + grand_total
 					reference_detail = get_reference_details("Purchase Invoice", invoice_name, party_details["party_account_currency"])
+					if reference_detail["exchange_rate"] != 1:
+						frappe.throw(_("We don't support multi currency yet.  Please check invoice # " + invoice_name + " for supplier : " + supplier));
+
+					if grand_total != reference_detail["outstanding_amount"] :
+						frappe.throw(_("The outstanding amount as change since the creation of the AAPT purchase_invoice : " + invoice_name + " for supplier : " + supplier));
+
 					pme.append("references", {
 						"reference_doctype": "Purchase Invoice",
 						"reference_name": invoice_name,
@@ -189,9 +215,23 @@ class AdvanceAutomaticPaymentTool(Document):
 						"allocated_amount": grand_total,
 						"exchange_rate": reference_detail["exchange_rate"]
 					})
+					#frappe.msgprint(str({
+                                        #        "reference_doctype": "Purchase Invoice",
+                                        #        "reference_name": invoice_name,
+                                        #        "due_date": reference_detail["due_date"],
+                                        #        "total_amount": reference_detail["total_amount"],
+                                        #        "outstanding_amount": reference_detail["outstanding_amount"],
+                                        #        "allocated_amount": grand_total,
+                                        #        "exchange_rate": reference_detail["exchange_rate"]
+                                        #}))
 				else:
-					pi = frappe.get_doc("Purchase Invoice", invoice_name)
+					pi = frappe.get_doc("Purchase Invoice", {"return_against": invoice_name})
 					reference_detail = get_reference_details("Purchase Invoice", pi.return_against, party_details["party_account_currency"])
+					if grand_total != reference_detail["outstanding_amount"] :
+                                                frappe.throw(_("The outstanding amount as change since the creation of the AAPT purchase_invoice : " + invoice_name + " for supplier : " + supplier));
+					if reference_detail["exchange_rate"] != 1:
+                                                frappe.throw(_("We don't support multi currency yet.  Please check invoice # " + invoice_name + " for supplier : " + supplier));
+
 					if reference_detail["outstanding_amount"] < 0:
 						pmer = frappe.new_doc("Payment Entry")
 						json_update = {
@@ -212,9 +252,12 @@ class AdvanceAutomaticPaymentTool(Document):
 							"reference_date" : posting_date_today,
 						}
 						pmer.update (json_update)
+						#frappe.msgprint("total_amount" + str(reference_detail["total_amount"]))
+                                        	#frappe.msgprint("allocated_amount" + str(reference_detail["outstanding_amount"]))
+                                        	#frappe.msgprint("allocated_amount" + str(grand_total))
 						pmer.append("references", {
 							"reference_doctype": "Purchase Invoice",
-							"reference_name": pi.return_against,
+							"reference_name": pi.name,
 							"due_date": reference_detail["due_date"],
 							"total_amount": reference_detail["total_amount"],
 							"outstanding_amount": reference_detail["outstanding_amount"],
@@ -226,14 +269,16 @@ class AdvanceAutomaticPaymentTool(Document):
 						pmer.paid_amount = 0-grand_total
 						pmer.save()
 						pmer.submit()
+						#frappe.msgprint("Submit Retour")
 			pme.received_amount = received_amount
 			pme.paid_amount = received_amount
+			#frappe.msgprint(str(received_amount))
 			if received_amount != 0:
 				pme.save()
 				pme.submit()
 			if mode_of_payment == "Cheque CDN" or mode_of_payment == "Cheque USD":
 				frappe.client.set_value("Cheque Series", self.bank_account, "cheque_series", cheque_series)
-		frappe.msgprint("Payment Entry are created.")
+		#frappe.msgprint("Payment Entry are created.")
 		frappe.db.set(self, 'is_payment_entry_generated', True)
 	
 	def get_default_address(doctype, name, sort_key='is_primary_address'):
