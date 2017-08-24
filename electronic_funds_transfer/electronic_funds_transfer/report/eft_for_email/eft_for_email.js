@@ -12,9 +12,9 @@ frappe.query_reports["EFT for Email"] = {
                 },
 		{
                         "fieldname":"eft",
-                        "label": __("EFT"),
+                        "label": __("AAPT"),
                         "fieldtype": "Link",
-                        "options": "Electronic Funds Transfer",
+                        "options": "Advance Automatic Payment Tool",
                         "default": ""
                 },
 

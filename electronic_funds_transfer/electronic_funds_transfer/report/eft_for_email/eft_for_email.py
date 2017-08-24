@@ -8,7 +8,7 @@ from frappe import _
 def execute(filters=None):
 	columns, data = [], []
 	columns = [_("Invoice") + "::120", _("Date") + "::140",
-                _("Total") + "::120", _("Payment Amount") + "::140"]
+                _("Total") + "::120", _("Payment Amount") + "::140", _("Credit") + "::120"]
 	conditions = ""
 	if filters.get("supplier"):
                 conditions += " and efti.supplier = %(supplier)s"
@@ -31,9 +31,9 @@ def execute(filters=None):
 	return columns, data
 
 def get_data(conditions, filters):
-        time_sheet = frappe.db.sql(""" SELECT efti.bill_no, p.bill_date, p.grand_total, efti.grand_total
-                FROM `tabElectronic Funds Transfer` eft
-                LEFT JOIN `tabElectronic Funds Transfer Item` efti ON  eft.name = efti.parent
+        time_sheet = frappe.db.sql(""" SELECT efti.bill_no, p.bill_date, p.grand_total, efti.grand_total, efti.credit
+                FROM `tabAdvance Automatic Payment Tool` eft
+                LEFT JOIN `tabAdvance Automatic Payment Tool Item` efti ON  eft.name = efti.parent
                 LEFT JOIN `tabPurchase Invoice` p ON p.name = efti.purchase_invoice
                 WHERE 1=1 %s order by efti.supplier """%(conditions), filters, as_list=1)
 
