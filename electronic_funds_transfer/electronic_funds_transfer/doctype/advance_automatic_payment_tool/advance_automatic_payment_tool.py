@@ -19,8 +19,8 @@ from erpnext.accounts.doctype.payment_entry.payment_entry import get_reference_d
 
 class AdvanceAutomaticPaymentTool(Document):
 	def validate(self):
-                self.total_amount()
-    
+		self.total_amount()
+	
 	def on_submit(self):
 		bank_detail = frappe.get_doc("Electronic Funds Transfer Bank Detail", self.bank_account)
 		frappe.db.set(self, 'file_creation_number', bank_detail.file_creation_number.zfill(4))
@@ -103,7 +103,7 @@ class AdvanceAutomaticPaymentTool(Document):
 				credit = cr.grand_total
 #				if credit != 0:
 #					frappe.msgprint(str(credit))
-                        pi = frappe.get_doc("Purchase Invoice", pi.name)
+				pi = frappe.get_doc("Purchase Invoice", pi.name)
 			if pi.bill_date:
 				aging = frappe.utils.date_diff(self.posting_date, pi.bill_date)
 			else:
@@ -141,8 +141,8 @@ class AdvanceAutomaticPaymentTool(Document):
 		#self.save()
 	def create_dict_from_list(self, list1):
 		dict1  = {
-            "supplier" : {"invoice_no" : 100.01}
-        }
+			"supplier" : {"invoice_no" : 100.01}
+		}
 		dict1.clear()
 		for d in list1:
 			if d.supplier in dict1 :
@@ -216,21 +216,21 @@ class AdvanceAutomaticPaymentTool(Document):
 						"exchange_rate": reference_detail["exchange_rate"]
 					})
 					#frappe.msgprint(str({
-                                        #        "reference_doctype": "Purchase Invoice",
-                                        #        "reference_name": invoice_name,
-                                        #        "due_date": reference_detail["due_date"],
-                                        #        "total_amount": reference_detail["total_amount"],
-                                        #        "outstanding_amount": reference_detail["outstanding_amount"],
-                                        #        "allocated_amount": grand_total,
-                                        #        "exchange_rate": reference_detail["exchange_rate"]
-                                        #}))
+										#        "reference_doctype": "Purchase Invoice",
+										#        "reference_name": invoice_name,
+										#        "due_date": reference_detail["due_date"],
+										#        "total_amount": reference_detail["total_amount"],
+										#        "outstanding_amount": reference_detail["outstanding_amount"],
+										#        "allocated_amount": grand_total,
+										#        "exchange_rate": reference_detail["exchange_rate"]
+										#}))
 				else:
 					pi = frappe.get_doc("Purchase Invoice", {"return_against": invoice_name})
 					reference_detail = get_reference_details("Purchase Invoice", pi.return_against, party_details["party_account_currency"])
 					if grand_total != reference_detail["outstanding_amount"] :
-                                                frappe.throw(_("The outstanding amount as change since the creation of the AAPT purchase_invoice : " + invoice_name + " for supplier : " + supplier));
+												frappe.throw(_("The outstanding amount as change since the creation of the AAPT purchase_invoice : " + invoice_name + " for supplier : " + supplier));
 					if reference_detail["exchange_rate"] != 1:
-                                                frappe.throw(_("We don't support multi currency yet.  Please check invoice # " + invoice_name + " for supplier : " + supplier));
+												frappe.throw(_("We don't support multi currency yet.  Please check invoice # " + invoice_name + " for supplier : " + supplier));
 
 					if reference_detail["outstanding_amount"] < 0:
 						pmer = frappe.new_doc("Payment Entry")
@@ -253,8 +253,8 @@ class AdvanceAutomaticPaymentTool(Document):
 						}
 						pmer.update (json_update)
 						#frappe.msgprint("total_amount" + str(reference_detail["total_amount"]))
-                                        	#frappe.msgprint("allocated_amount" + str(reference_detail["outstanding_amount"]))
-                                        	#frappe.msgprint("allocated_amount" + str(grand_total))
+											#frappe.msgprint("allocated_amount" + str(reference_detail["outstanding_amount"]))
+											#frappe.msgprint("allocated_amount" + str(grand_total))
 						pmer.append("references", {
 							"reference_doctype": "Purchase Invoice",
 							"reference_name": pi.name,
@@ -310,8 +310,8 @@ class AdvanceAutomaticPaymentTool(Document):
 			for dl in lst_dl:
 				if frappe.db.exists('Address', dl.parent):
 					address = frappe.get_doc('Address', dl.parent)
-                	        	if address.is_primary_address == True:
-                	       	        	if address.email_id:
+					if address.is_primary_address == True:
+						if address.email_id:
 							a=1
 						else:
 							no_error = False
